@@ -7,6 +7,7 @@ export class AppService {
     return [
       { message: 'Take out trash', done: false },
       { message: 'Continue using Nx', done: false },
+      { message: 'Care of yourself', done: false },
     ];
   }
 }
