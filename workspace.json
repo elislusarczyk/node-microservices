@@ -12,8 +12,22 @@
           "builder": "@nrwl/workspace:run-commands",
           "options": {
             "commands": [
+              "aws eks update-kubeconfig --name dev-alto",
+              "helm upgrade --install api ./apps/api/chart/api -n test",
+              "helm test api -n test"
+            ],
+            "parallel": false
+          }
+        },
+        "dockerize": {
+          "builder": "@nrwl/workspace:run-commands",
+          "options": {
+            "commands": [
               "nx build api",
-              "docker build -f ./apps/api/Dockerfile . -t api"
+              "docker build -f ./apps/api/Dockerfile . -t api",
+              "docker tag api 490029739162.dkr.ecr.eu-west-2.amazonaws.com/test/api:latest",
+              "aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 490029739162.dkr.ecr.eu-west-2.amazonaws.com",
+              "docker push 490029739162.dkr.ecr.eu-west-2.amazonaws.com/test/api:latest"
             ],
             "parallel": false
           }
@@ -75,8 +89,22 @@
           "builder": "@nrwl/workspace:run-commands",
           "options": {
             "commands": [
+              "aws eks update-kubeconfig --name dev-alto",
+              "helm upgrade --install html ./apps/html/chart/html -n test",
+              "helm test html -n test"
+            ],
+            "parallel": false
+          }
+        },
+        "dockerize": {
+          "builder": "@nrwl/workspace:run-commands",
+          "options": {
+            "commands": [
               "nx build html",
-              "docker build -f ./apps/html/Dockerfile . -t html"
+              "docker build -f ./apps/html/Dockerfile . -t html",
+              "docker tag html 490029739162.dkr.ecr.eu-west-2.amazonaws.com/test/html:latest",
+              "aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 490029739162.dkr.ecr.eu-west-2.amazonaws.com",
+              "docker push 490029739162.dkr.ecr.eu-west-2.amazonaws.com/test/html:latest"
             ],
             "parallel": false
           }

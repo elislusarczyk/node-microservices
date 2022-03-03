@@ -2,6 +2,12 @@ image: node:16
 stages:
   - setup
   - test
+  - dockerize
+  - deploy
+  - staging
+  - production
+  - smoketests
+  - integration
 
 install-dependencies:
   stage: setup
@@ -44,3 +50,80 @@ test:
   extends: .distributed
   script:
     - yarn nx affected --base=HEAD~1 --target=test --parallel=2
+
+dockerize:
+  stage: dockerize
+  services:
+    - docker:dind
+  extends: .distributed
+  script:
+    - yarn nx affected --base=HEAD~1 --target=dockerize --parallel=2
+
+development:
+  stage: development
+  extends: .distributed
+  only:
+    - main
+    - merge_requests
+  script:
+    - NODE_ENV=development yarn nx affected --base=HEAD~1 --target=deploy --parallel=2
+
+.development_tests:
+  interruptible: true
+  only:
+    - main
+    - merge_requests
+  needs:
+    - install-dependencies
+  artifacts:
+    paths:
+      - node_modules/.cache/nx
+
+smoketests:
+  stage: smoketests
+  extends: .development_tests
+  script:
+    - NODE_ENV=development yarn nx affected --base=HEAD~1 --target=smoketests --parallel=
+
+integration:
+  stage: integration
+  extends: .development_tests
+  script:
+    - NODE_ENV=development yarn nx affected --base=HEAD~1 --target=integration --parallel=
+
+staging:
+  stage: staging
+  only:
+    - main
+    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - when: never
+  extends: .distributed
+  script:
+    - NODE_ENV=staging yarn nx affected --base=HEAD~1 --target=deploy --parallel=2
+
+.staging_tests:
+  interruptible: true
+  only:
+    - main
+    - merge_requests
+  needs:
+    - install-dependencies
+  artifacts:
+    paths:
+      - node_modules/.cache/nx
+
+production:
+  stage: production
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - when: never
+  only:
+    - main
+    - merge_requests
+  extends: .distributed
+  script:
+    - NODE_ENV=production yarn nx affected --base=HEAD~1 --target=deploy --parallel=2
